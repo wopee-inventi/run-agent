@@ -402,17 +402,22 @@ runs:
 
     - name: Upload test results
       if: always()
+      # A failed/slow upload must not fail the run or hold the runner; the agent verdict is already reported.
+      continue-on-error: true
       uses: actions/upload-artifact@v7
       with:
         name: playwright-results
         path: |
           ${{ env.WOPEE_AGENT_WORK_DIR }}/test-results
           ${{ env.WOPEE_AGENT_WORK_DIR }}/playwright-report
+          !${{ env.WOPEE_AGENT_WORK_DIR }}/playwright-report/data/*.zip
           /tmp/proxy.out
           /tmp/chrome.out
           /tmp/socat-proxy.out
           /tmp/socat-viewer.out
         if-no-files-found: ignore
+        # Content is already-compressed (trace.zip, jpeg/webp frames) — recompressing wastes CPU for ~0 gain.
+        compression-level: 0
         retention-days: 1
 
     - name: Export Test Report to WOPEE_AGENT_REPORT
